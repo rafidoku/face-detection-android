@@ -16,6 +16,7 @@
         android:background="@color/dark_gray">
 
         <TextView
+            android:id="@+id/faceStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/liveness_instruction"
@@ -33,15 +34,19 @@
     <com.google.android.material.card.MaterialCardView
         android:layout_width="240dp"
         android:layout_height="240dp"
-        android:id="@+id/cameraPreview"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/topView"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="42dp"
         app:cardElevation="0dp"
-        app:strokeWidth="10dp"
-        app:strokeColor="@color/green"
         app:cardCornerRadius="120dp"
-        />
+        app:strokeWidth="10dp"
+        app:strokeColor="@color/green">
+        <androidx.camera.view.PreviewView
+            android:layout_width="240dp"
+            android:layout_height="240dp"
+            android:id="@+id/cameraPreview"
+            />
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
