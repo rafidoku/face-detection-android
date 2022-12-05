@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/my_nav"
+    app:startDestination="@id/faceDetectorFragment">
+
+    <fragment
+        android:id="@+id/faceDetectorFragment"
+        android:name="com.example.faceverification.FaceDetectorFragment"
+        android:label="Face Detector"
+        tools:layout="@layout/fragment_face_detector" >
+        <action
+            android:id="@+id/action_faceDetectorFragment_to_liveCameraFragment"
+            app:destination="@id/liveCameraFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/liveCameraFragment"
+        android:name="com.example.faceverification.LiveCameraFragment"
+        android:label="Live Camera"
+        tools:layout="@layout/fragment_live_camera" >
+        <action
+            android:id="@+id/action_liveCameraFragment_to_faceDetectorFragment"
+            app:destination="@id/faceDetectorFragment" />
+    </fragment>
+</navigation>
