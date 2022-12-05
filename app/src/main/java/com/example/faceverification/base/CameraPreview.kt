@@ -15,6 +15,7 @@ class CameraPreview(context: Context, private val camera: android.hardware.Camer
     }
 
     override fun surfaceCreated(p0: SurfaceHolder) {
+        camera.setDisplayOrientation(90)
         camera.apply {
             try {
                 setPreviewDisplay(holder)
@@ -29,7 +30,7 @@ class CameraPreview(context: Context, private val camera: android.hardware.Camer
         if (holder.surface == null) {
             return
         }
-
+        camera.setDisplayOrientation(90)
         try {
             camera.stopPreview()
         } catch (e: Exception) {

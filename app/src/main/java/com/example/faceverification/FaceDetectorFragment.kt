@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -12,8 +13,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.navigation.fragment.findNavController
+import com.example.faceverification.extension.setNavigationBar
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
@@ -47,7 +50,8 @@ class FaceDetectorFragment : Fragment() {
         humanFace = v.findViewById(R.id.faceButton)
         cameraButton = v.findViewById(R.id.cameraButton)
 
-
+        val thisActivity = activity as? AppCompatActivity
+        thisActivity?.setNavigationBar("Verification", Color.BLACK,false, Color.WHITE, null, null)
         // Face detection property initializer
         val realtimeopts = FaceDetectorOptions.Builder().setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL).build()
         val detector = FaceDetection.getClient(realtimeopts)
