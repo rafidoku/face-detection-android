@@ -1,17 +1,15 @@
 package com.example.faceverification
 
-import android.content.ContentResolver
-import android.content.ContentValues
 import android.graphics.*
-import android.os.Build
+import android.opengl.Visibility
 import android.os.Bundle
-import android.provider.MediaStore
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -20,14 +18,13 @@ import androidx.camera.view.PreviewView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.example.faceverification.common.ImageUtils
+import com.example.faceverification.extension.convertImageProxyToBitmap
 import com.example.faceverification.extension.setNavigationBar
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions
-import java.io.File
 import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -40,10 +37,13 @@ class LiveCameraFragment : Fragment() {
     lateinit var topView: ConstraintLayout
     lateinit var detector: FaceDetector
     lateinit var faceStatusLabel: TextView
+    lateinit var counterLabel: TextView
+
     private lateinit var cameraExecutor: ExecutorService
     private var imageCapture: ImageCapture? = null
-
     private var isDetected: Boolean = false
+    private var collectedImages: MutableList<Bitmap> = mutableListOf<Bitmap>()
+    private var isFaceCaptureStarted: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -62,15 +62,13 @@ class LiveCameraFragment : Fragment() {
         cameraPreview = v.findViewById(R.id.cameraPreview)
         topView = v.findViewById(R.id.topView)
         faceStatusLabel = v.findViewById(R.id.faceStatus)
+        counterLabel = v.findViewById(R.id.counterLabel)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
         val thisActivity = activity as? AppCompatActivity
         thisActivity?.setNavigationBar("Face Verification", Color.WHITE, false, Color.GRAY, androidx.appcompat.R.drawable.abc_ic_ab_back_material, Color.WHITE)
 
         startCamera()
-        faceStatusLabel.setOnClickListener{
-            this.takePhoto("taken_picture")
-        }
     }
 
     private fun startCamera() {
@@ -86,7 +84,7 @@ class LiveCameraFragment : Fragment() {
                     it.setSurfaceProvider(cameraPreview.surfaceProvider)
                 }
 
-            val imageCapture = ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            imageCapture = ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
 
             val imageAnalyzer = ImageAnalysis.Builder()
@@ -98,12 +96,17 @@ class LiveCameraFragment : Fragment() {
                                 if (cameraPreview.bitmap != null) {
                                     detector.process(cameraPreview.bitmap!!, 0).addOnSuccessListener { faces ->
                                         if(faces.size > 0) {
-                                            this.faceStatusLabel.setText("Face Detected")
                                             this.isDetected = true
+                                            counterLabel.visibility = View.VISIBLE
+                                            setTimerCountdown()
                                         }
                                     }.addOnFailureListener {
                                         Log.d("TAG", "Detect Face error ${it.message}")
                                     }
+                                }
+                            } else if (isDetected && isFaceCaptureStarted) {
+                                if (cameraPreview.bitmap != null) {
+                                    takePhoto()
                                 }
                             }
                         }
@@ -124,43 +127,40 @@ class LiveCameraFragment : Fragment() {
         }, ContextCompat.getMainExecutor(requireContext()))
     }
 
-    private fun takePhoto(filenameFormat: String) {
+    private fun takePhoto() {
         if (imageCapture == null) {
             Log.d("TAG", "Null ImageCapture")
             return
         }
-//        val imageCapture = imageCapture ?:  return
-        val name = SimpleDateFormat(filenameFormat, Locale.US)
-            .format(System.currentTimeMillis())
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
-            }
-        }
-        val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(
-                activity?.contentResolver!!,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues)
-            .build()
-
         imageCapture?.takePicture(
-            outputOptions,
             ContextCompat.getMainExecutor(requireContext()),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exc: ImageCaptureException) {
-                    Log.e("TAG", "Photo capture failed: ${exc.message}", exc)
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    if (collectedImages.size < 15) {
+                        collectedImages.add(ImageUtils.shared.getCompressBitmap(image.convertImageProxyToBitmap())!!)
+                        Log.d("TAG", "Face Collected ${collectedImages.size}")
+                        image.close()
+                    } else {
+                        isFaceCaptureStarted = false
+                    }
                 }
 
-                override fun onImageSaved(output: ImageCapture.OutputFileResults){
-                    val msg = "Photo capture succeeded: ${output.savedUri}"
-                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
-                    Log.d("TAG", msg)
+                override fun onError(exception: ImageCaptureException) {
+                    Log.d("TAG", "Image capture failed ${exception.message}")
                 }
+            })
+    }
+
+    private fun setTimerCountdown() {
+        object : CountDownTimer(3000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                counterLabel.setText("${(millisUntilFinished / 1000)}")
             }
-        )
+            override fun onFinish() {
+                counterLabel.visibility = View.GONE
+                isFaceCaptureStarted = true
+            }
+        }.start()
     }
 
     private class PreviewAnalyzer(private val listener: PreviewListener) : ImageAnalysis.Analyzer {

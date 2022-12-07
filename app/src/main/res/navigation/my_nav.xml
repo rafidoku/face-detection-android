@@ -17,7 +17,7 @@
     <fragment
         android:id="@+id/liveCameraFragment"
         android:name="com.example.faceverification.LiveCameraFragment"
-        android:label="Live Camera"
+        android:label="Face Verification"
         tools:layout="@layout/fragment_live_camera" >
         <action
             android:id="@+id/action_liveCameraFragment_to_faceDetectorFragment"
